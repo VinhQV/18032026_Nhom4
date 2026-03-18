@@ -1,0 +1,120 @@
+/*
+ * bai1.c
+ *
+ *  Created on: Mar 18, 2026
+ *      Author: vinhv
+ */
+
+
+#include <stdio.h>
+#include <stdint.h>
+#include <stm32f401re_gpio.h>
+#include <stm32f401re_rcc.h>
+
+// Macro
+#define GPIO_PIN_SET 						1
+#define GPIO_PIN_RESET						0
+
+//LED
+#define LED_GPIO_PORT						GPIOA
+#define LED_GPIO_PIN						GPIO_Pin_5
+#define LED_GPIO_RCC						RCC_AHB1Periph_GPIOA
+
+//BUTTON
+#define BUTTON_GPIO_PORT					GPIOC
+#define BUTTON_GPIO_PIN						GPIO_Pin_13
+#define BUTTON_GPIO_RCC						RCC_AHB1Periph_GPIOC
+
+
+
+////
+static void Led_Init(void)
+{
+	GPIO_InitTypeDef GPIO_InitStructure;
+
+	// Cap xung clock cho led A
+	RCC_AHB1PeriphClockCmd(LED_GPIO_RCC, ENABLE);
+
+	GPIO_InitStructure.GPIO_Pin = LED_GPIO_PIN;
+
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+
+	GPIO_Init(LED_GPIO_PORT, &GPIO_InitStructure);
+}
+
+static void Button_Init(void)
+{
+	GPIO_InitTypeDef GPIO_InitStructure;
+
+	//Cap xung clock cho nut bam
+	RCC_AHB1PeriphClockCmd(BUTTON_GPIO_RCC, ENABLE);
+	//Chon chan
+	GPIO_InitStructure.GPIO_Pin = BUTTON_GPIO_PIN;
+
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+
+	GPIO_Init(BUTTON_GPIO_PORT, &GPIO_InitStructure);
+}
+
+static void Led_Control(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint8_t status)
+{
+	if(status == GPIO_PIN_SET)
+	{
+		GPIO_SetBits(GPIOx, GPIO_Pin);
+	}
+	else if(status == GPIO_PIN_RESET)
+	{
+		GPIO_ResetBits(GPIOx, GPIO_Pin);
+	}
+}
+
+static uint8_t Button_GetLogic(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
+{
+	return GPIO_ReadInputDataBit(GPIOx, GPIO_Pin);
+}
+
+void Delay_ms(uint32_t ms){
+	//loop forever
+	for(uint32_t i = 0; i < ms ; i++)
+	{
+		for(uint32_t j = 0;j < 5000; j++);
+	}
+}
+
+int main(void)
+{
+	// System clock 84MHz ------------------------------------------------------
+	SystemCoreClockUpdate();
+
+	// Initializes Button User -------------------------------------------------
+	Button_Init();
+
+	// Initializes Led ---------------------------------------------------------
+	Led_Init();
+
+    /* Loop forever */
+	while(1)
+	    {
+	        // //Nhan nut thi keo xuong khong
+	        if (Button_GetLogic(BUTTON_GPIO_PORT, BUTTON_GPIO_PIN) == 0)
+	        {
+	            //on
+	            Led_Control(LED_GPIO_PORT, LED_GPIO_PIN, GPIO_PIN_SET);
+	        }
+	        else //Pull up tro lai muc logic 1
+	        {
+	            //off
+	            Led_Control(LED_GPIO_PORT, LED_GPIO_PIN, GPIO_PIN_RESET);
+	        }
+	    }
+}
+
+
