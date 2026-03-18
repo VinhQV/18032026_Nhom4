@@ -1,0 +1,12 @@
+# STM32CubeIDE / Eclipse
+Debug/
+Release/
+.mxproject
+*.launch
+*.o
+*.elf
+*.bin
+*.map
+*.hex
+*.su
+.metadata/

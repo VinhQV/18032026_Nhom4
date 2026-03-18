@@ -1,0 +1,144 @@
+/*
+ * bai2.c
+ *
+ *  Created on: Mar 18, 2026
+ *      Author: vinhv
+ */
+
+
+
+#include <stdio.h>
+#include <stdint.h>
+#include <stm32f401re_gpio.h>
+#include <stm32f401re_rcc.h>
+
+
+//Define Logic GPIO_PIN--------------------------------------------------------
+#define GPIO_PIN_SET                1
+#define GPIO_PIN_RESET              0
+#define GPIO_PIN_LOW                0
+#define GPIO_PIN_HIGH               1
+
+//Define GPIO_PIN--------------------------------------------------------------
+#define BUZZER_GPIO_PORT            GPIOC
+#define BUZZER_GPIO_PIN             GPIO_Pin_9
+#define BUZZERControl_SetClock      RCC_AHB1Periph_GPIOC
+
+#define BUTTON_GPIO_PORT            GPIOB
+#define BUTTON_GPIO_PIN             GPIO_Pin_4
+#define BUTTONControl_SetClock      RCC_AHB1Periph_GPIOB
+
+static void Buzzer_Init(void)
+{
+    //Declare type variable GPIO Struc--------------------------------------
+    GPIO_InitTypeDef GPIO_InitStructure;
+
+    //Enable Clock GPIOC----------------------------------------------------
+    RCC_AHB1PeriphClockCmd(BUZZERControl_SetClock, ENABLE);
+
+    //Choose Pin Buzzer-----------------------------------------------------
+    GPIO_InitStructure.GPIO_Pin = BUZZER_GPIO_PIN;
+
+    //Choose Pin Buzzer as Out----------------------------------------------
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+
+    //Choose Speed Pin------------------------------------------------------
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+
+    //Select type-----------------------------------------------------------
+    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+
+    //Select status---------------------------------------------------------
+    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN ;
+
+    //The function initializes all of the above values----------------------
+    GPIO_Init(BUZZER_GPIO_PORT, &GPIO_InitStructure);
+}
+
+static void Button_Init(void)
+{
+	GPIO_InitTypeDef GPIO_InitStructure;
+
+	//Cap xung clock cho nut bam
+	RCC_AHB1PeriphClockCmd(BUTTON_GPIO_RCC, ENABLE);
+	//Chon chan
+	GPIO_InitStructure.GPIO_Pin = BUTTON_GPIO_PIN;
+
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+
+	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+
+	GPIO_Init(BUTTON_GPIO_PORT, &GPIO_InitStructure);
+}
+//
+//static void Led_Control(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint8_t status)
+//{
+//	if(status == GPIO_PIN_SET)
+//	{
+//		GPIO_SetBits(GPIOx, GPIO_Pin);
+//	}
+//	else if(status == GPIO_PIN_RESET)
+//	{
+//		GPIO_ResetBits(GPIOx, GPIO_Pin);
+//	}
+//}
+
+static void BuzzerControl_SetStatus(GPIO_TypeDef * GPIOx, uint8_t GPIO_PIN, uint8_t Status)
+{
+    //Set bit in BSRR Registers---------------------------------------------
+    if (Status == GPIO_PIN_SET)
+    {
+        GPIOx->BSRRL |= 1 << GPIO_PIN;
+    }
+
+    //Reset bit in BSRR Registers-------------------------------------------
+    if (Status == GPIO_PIN_RESET)
+    {
+        GPIOx->BSRRH |= 1 << GPIO_PIN;
+    }
+}
+
+static uint8_t Button_GetLogic(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
+{
+	return GPIO_ReadInputDataBit(GPIOx, GPIO_Pin);
+}
+
+void Delay_ms(uint32_t ms){
+	//loop forever
+	for(uint32_t i = 0; i < ms ; i++)
+	{
+		for(uint32_t j = 0;j < 5000; j++);
+	}
+}
+
+int main(void)
+{
+	// System clock 84MHz ------------------------------------------------------
+	SystemCoreClockUpdate();
+
+	// Initializes Button User -------------------------------------------------
+	Button_Init();
+
+	// Initializes Led ---------------------------------------------------------
+//	Led_Init();
+
+    /* Loop forever */
+	while(1)
+	    {
+	        // //Nhan nut thi keo xuong khong
+	        if (Button_GetLogic(BUTTON_GPIO_PORT, BUTTON_GPIO_PIN) == 0)
+	        {
+	            //on
+	        	BuzzerControl_SetStatus(BUZZER_GPIO_PORT, BUZZER_GPIO_PIN, GPIO_PIN_SET);
+	        }
+	        else //Pull up tro lai muc logic 1
+	        {
+	            //off
+	        	BuzzerControl_SetStatus(BUZZER_GPIO_PORT, BUZZER_GPIO_PIN, GPIO_PIN_RESET);
+	        }
+	    }
+}
+
+
